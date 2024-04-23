@@ -21,7 +21,7 @@ def Index():
                 FROM todos t
                 INNER JOIN status s
                 ON t.status = s.name
-                 ORDER BY s.rank""") 
+                ORDER BY s.rank""") 
     # update based on rank
     data = cur.fetchall()
     cur.close()
