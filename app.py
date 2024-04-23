@@ -17,11 +17,15 @@ def Index():
     # getdata
     
     cur = mysql.connection.cursor()
-    cur.execute("SELECT task, status FROM todos ORDER BY status DESC") 
+    cur.execute("""SELECT t.task, t.status
+                FROM todos t
+                INNER JOIN status s
+                ON t.status = s.name
+                 ORDER BY s.rank""") 
     # update based on rank
     data = cur.fetchall()
     cur.close()
-    return list(data)
+    return list(data), 200
     # return render_template('index.html', todos=data)
 
 @app.route('/create', methods=['POST'])
@@ -43,10 +47,10 @@ def create():
             cur.execute("INSERT INTO todos (task, status) VALUES (%s, %s)", (task, status))
         mysql.connection.commit()
         if existing_data != ():
-            return "Task with same name exists" 
+            return "Task with same name exists", 403
             # status code 
             
-        return "Created Succesfully"
+        return "Created Succesfully", 200
         
 
 @app.route('/delete', methods=['DELETE'])
@@ -54,14 +58,17 @@ def delete():
     if request.method == 'DELETE':
         task = request.form['task']
         # flash("Todo Has Been Deleted Successfully")
-        
-        # check if tasks are valid or not
-        
-        # status code
         cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM todos WHERE task=%s", (task,))
+        data = (cur.fetchall())
+        # check if tasks are valid or not
+        if data == ():
+            cur.close()
+            return "Task does not exists", 404
+        # status code
         cur.execute("DELETE FROM todos WHERE task=%s", (task,))
         mysql.connection.commit()
-        return "Deleted succesfully"
+        return "Deleted succesfully", 200
 
 @app.route('/update', methods=['PUT'])
 def update():
@@ -75,7 +82,7 @@ def update():
         print(status)
         
         if task == "":
-            return "No task provided"
+            return "No task provided", 403
         
         cur = mysql.connection.cursor()
         cur.execute("SELECT * FROM todos WHERE task=%s", (task,))
@@ -85,7 +92,7 @@ def update():
         # mysql.connection.commit()
         print(type(data))
         if data == ():
-            return "Task not found"
+            return "Task not found", 404
         
         data = list(data)
         print(data)
@@ -98,22 +105,27 @@ def update():
             data = (cur.fetchall())
             mysql.connection.commit()
             if data != ():
-                return "New task name already exists."
+                return "New task name already exists.", 403
             # 
             
         if status == "":
             status = data[0][2]
-        
-        if status != "Pending" and status != "Completed":
-            return "Incorrect status"
-
+        #checking if status is correct or not
+        status = status.lower()
+        if status == "complete": # 'complete' and 'completed' both accepted
+            status = "completed"
         cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM status WHERE value=%s",(status,))
+        existing_status = cur.fetchall()
+        if existing_status == (): # incorrect status, not found in db
+            return "Incorrect status", 403
+        
         cur.execute("""
         UPDATE todos SET task=%s, status=%s
         WHERE task=%s
         """, (new_task_name, status, task))
         mysql.connection.commit()
-        return "Updated successfully"
+        return "Updated successfully", 200
         return redirect(url_for('Index'))
 
 if __name__ == "__main__":

@@ -23,9 +23,14 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `todos` (
   `id` int(11) NOT NULL,
-  `task` varchar(255) NOT NULL,
+  `task` varchar(255) UNIQUE NOT NULL,
   `status` varchar(50) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+CREATE TABLE `status`(
+  `name` varchar(255) UNIQUE NOT NULL,
+  `rank` int(11) NOT NULL
+);
 
 --
 -- Dumping data for table `todos`
@@ -36,6 +41,12 @@ INSERT INTO `todos` (`id`, `task`, `status`) VALUES
 (2, 'Buy groceries', 'Completed'),
 (3, 'Call mom', 'Pending');
 
+INSERT INTO `status` (`name`, `rank`) VALUES
+('Completed', 4),
+('Todo', 3),
+('Hold', 2),
+('Inprogress', 1);
+
 --
 -- Indexes for dumped tables
 --
@@ -45,7 +56,8 @@ INSERT INTO `todos` (`id`, `task`, `status`) VALUES
 --
 ALTER TABLE `todos`
   ADD PRIMARY KEY (`id`);
-
+ALTER TABLE `status`
+  ADD PRIMARY KEY (`name`);
 --
 -- AUTO_INCREMENT for dumped tables
 --
